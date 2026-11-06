@@ -244,6 +244,8 @@ function demCard(d) {
       <div class="row">
         ${d.urgence === "urgent" ? '<span class="pill urg">Urgent</span>' : ""}
         ${transfert ? '<span class="pill tr">↔ Recommandé par un collègue</span>' : ""}
+        ${d.source === "Site web" ? '<span class="pill st-attribuee">🌐 Site web</span>' : ""}
+        ${(d.photos || []).length ? `<span class="small">📷 ${d.photos.length}</span>` : ""}
         <span class="small">${esc(a ? a.nom : "Non attribuée")} · ${esc(ago(d.createdAt || Date.now()))}</span>
       </div>
     </div></div>`;
@@ -383,7 +385,12 @@ function vEquipe(m) {
   });
   let totalTr = 0; S.demandes.forEach(d => (d.historique || []).forEach(h => { if (h.type === "transfert") totalTr++; }));
   const ca = S.demandes.filter(d => d.statut === "terminee").reduce((s, d) => s + (Number(d.montant) || 0), 0);
+  const lienClient = location.origin + location.pathname.replace(/[^/]*$/, "") + "devis.html";
   m.innerHTML = `<h2>Équipe</h2>
+   <div class="card"><b>🌐 Lien de la page client</b>
+     <div class="small" style="margin:6px 0;word-break:break-all">${esc(lienClient)}</div>
+     <div class="actions" style="margin-top:6px"><button class="btn sm" id="copy-link">Copier le lien</button><a class="btn sec sm" href="${esc(lienClient)}" target="_blank" rel="noopener" style="text-decoration:none">Ouvrir</a></div>
+     <div class="small" style="margin-top:6px">Astuce : ajoute <code>?service=chauffe-eau</code>, <code>plomberie</code> ou <code>electricite</code> à la fin pour présélectionner le métier.</div></div>
    <div class="stats">
      <div class="stat"><b>${S.demandes.filter(d => d.statut === "terminee").length}</b><span>interventions terminées</span></div>
      <div class="stat"><b>${totalTr}</b><span>clients échangés entre vous</span></div>
@@ -413,6 +420,7 @@ function vEquipe(m) {
      </div>
      <div class="actions"><button class="btn" type="submit">Enregistrer</button><button class="btn sec" type="button" id="fa-cancel" style="display:none">Annuler</button><button class="btn danger" type="button" id="fa-del" style="display:none">Retirer de l'équipe</button></div>
    </form>`;
+  $("copy-link").onclick = async () => { try { await navigator.clipboard.writeText(lienClient); toast("Lien copié ✓"); } catch (e) { toast("Copie impossible : sélectionne le lien à la main"); } };
   const f = $("fart"), E = f.elements;
   const reset = () => { f.reset(); E.aid.value = ""; $("fa-title").textContent = "Ajouter un artisan"; $("fa-cancel").style.display = "none"; $("fa-del").style.display = "none"; };
   m.querySelectorAll("[data-edit]").forEach(b => b.onclick = () => {
@@ -448,6 +456,18 @@ function confirmBox(msg, onYes) {
   $("cb-y").onclick = async () => { $("modal").innerHTML = ""; await onYes(); if (OPEN) openDetail(OPEN); };
 }
 
+const PHOTO_URLS = {};
+async function loadPhotos(d) {
+  const key = d.id + ":" + d.photos.join(",");
+  if (!PHOTO_URLS[key]) {
+    const { data, error } = await S.sb.storage.from("photos").createSignedUrls(d.photos, 3600);
+    if (error || !data) return;
+    PHOTO_URLS[key] = data.map(x => x.signedUrl).filter(Boolean);
+  }
+  const box = $("d-photos"); if (!box || OPEN !== d.id) return;
+  box.innerHTML = PHOTO_URLS[key].map(u => `<a href="${esc(u)}" target="_blank" rel="noopener" class="thumb"><img src="${esc(u)}" alt="Photo"></a>`).join("");
+}
+
 function openDetail(id) {
   const d = S.demandes.find(x => x.id === id); if (!d) { closeModal(); return; }
   OPEN = id;
@@ -458,7 +478,10 @@ function openDetail(id) {
     <div class="row" style="margin:8px 0"><span class="pill st-${esc(d.statut)}">${esc(STLABEL[d.statut])}</span>${d.urgence === "urgent" ? '<span class="pill urg">Urgent</span>' : ""}<span class="small">${esc(d.metier)} · ${esc(d.source || "")}</span></div>
     <div class="links"><a href="tel:${esc(d.tel)}">📞 ${esc(d.tel)}</a><a href="https://wa.me/${esc(phoneDigits(d.tel))}" target="_blank" rel="noopener">💬 WhatsApp</a><a href="${esc(maps)}" target="_blank" rel="noopener">📍 Itinéraire</a></div>
     <p class="small" style="margin:6px 0">${esc(d.adresse || "")} ${esc(d.commune || "")}</p>
-    <div class="card" style="background:#faf8f3">${esc(d.description).replace(/\n/g, "<br>")}</div>
+    ${d.emailClient ? `<p class="small" style="margin:4px 0">✉️ ${esc(d.emailClient)}</p>` : ""}
+    <div class="card" style="background:#faf8f3">${esc(d.description).replace(/\n/g, "<br>")}
+      ${d.disponibilites ? `<div class="small" style="margin-top:8px">🕒 Disponibilités : ${esc(d.disponibilites)}</div>` : ""}</div>
+    ${(d.photos || []).length ? `<div class="photos-grid" id="d-photos">${d.photos.map(() => '<div class="thumb"></div>').join("")}</div>` : ""}
     <div class="grid2">
       <div class="f"><label>Statut</label><select id="d-st">${STATUTS.map(([k, l]) => `<option value="${k}" ${k === d.statut ? "selected" : ""}>${l}</option>`).join("")}</select></div>
       <div class="f"><label>Artisan</label><select id="d-art" ${S.isAdmin ? "" : "disabled"}>${artOptions(d.artisanId)}</select></div>
@@ -483,6 +506,7 @@ function openDetail(id) {
     ${S.isAdmin ? `<div class="actions"><button class="btn danger sm" id="d-del">Supprimer la demande</button></div>` : ""}
   </div></div>`;
   $("x").onclick = closeModal;
+  if ((d.photos || []).length) loadPhotos(d);
   $("ov").onclick = e => { if (e.target.id === "ov") closeModal(); };
   ["d-st","d-art","d-rdv","d-mt","t-note","n-txt"].forEach(k => { const el = $(k); if (el) { el.onfocus = () => S._editing = true; el.onblur = () => setTimeout(() => S._editing = false, 300); } });
   const cur = () => S.demandes.find(x => x.id === id) || d;

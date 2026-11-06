@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Demander un devis — Zartizan</title>
+<meta name="description" content="Plomberie, électricité, entretien de chauffe-eau à La Réunion : décrivez votre besoin, un artisan du collectif Zartizan vous recontacte.">
+<meta name="theme-color" content="#0f766e">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta property="og:title" content="Zartizan — Demandez un devis à un artisan péi">
+<meta property="og:description" content="Plomberie, électricité, entretien de chauffe-eau. Décrivez votre besoin, on vous rappelle.">
+<meta property="og:image" content="icon-512.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f5f3ee;--ink:#1d2321;--muted:#5f6764;--line:#e4e0d7;--accent:#0f766e;--accent-dk:#0b5c56;--sun:#f59e0b;--warn:#c2410c}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif;font-size:16px;line-height:1.45}
+button,input,select,textarea{font:inherit;color:inherit}
+.hero{background:linear-gradient(160deg,var(--accent) 0%,var(--accent-dk) 100%);color:#fff;padding:22px 18px 70px}
+.brand{display:flex;align-items:center;gap:10px;max-width:640px;margin:0 auto 22px}
+.brand img{width:40px;height:40px;border-radius:10px}
+.brand b{font-size:19px}
+.hero h1{max-width:640px;margin:0 auto 8px;font-size:clamp(26px,6vw,36px);line-height:1.15;font-weight:800}
+.hero h1 span{color:#fcd34d}
+.hero p{max-width:640px;margin:0 auto;opacity:.92}
+.trust{max-width:640px;margin:14px auto 0;display:flex;gap:14px;flex-wrap:wrap;font-size:14px;opacity:.95}
+.wrap{max-width:640px;margin:-48px auto 40px;padding:0 14px}
+.card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:18px 16px;margin-bottom:14px;box-shadow:0 6px 24px rgba(15,40,35,.06)}
+.step{display:flex;align-items:center;gap:10px;margin:0 0 12px;font-size:17px;font-weight:700}
+.step i{font-style:normal;background:var(--accent);color:#fff;width:26px;height:26px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:14px}
+.services{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.svc{border:2px solid var(--line);border-radius:14px;padding:14px 10px;text-align:center;cursor:pointer;background:#fff;transition:.15s}
+.svc .e{font-size:28px;display:block;margin-bottom:4px}
+.svc b{font-size:14.5px}
+.svc.on{border-color:var(--accent);background:#ecf7f5;box-shadow:inset 0 0 0 1px var(--accent)}
+label{display:block;font-size:14px;font-weight:600;margin:12px 0 5px}
+label small{font-weight:400;color:var(--muted)}
+input,select,textarea{width:100%;border:1px solid #d8d3c8;border-radius:12px;padding:12px;background:#fff;font-size:16px}
+input:focus,textarea:focus,select:focus{outline:2px solid var(--accent);outline-offset:-1px;border-color:transparent}
+textarea{min-height:110px;resize:vertical}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:520px){.grid2{grid-template-columns:1fr}}
+.urg{display:flex;gap:8px}
+.urg button{flex:1;border:2px solid var(--line);background:#fff;border-radius:12px;padding:11px 8px;font-weight:600;cursor:pointer;font-size:14.5px}
+.urg button.on{border-color:var(--accent);background:#ecf7f5}
+.urg button.on.u{border-color:var(--warn);background:#fdeee6;color:var(--warn)}
+.photos{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.ph{position:relative;width:78px;height:78px;border-radius:10px;overflow:hidden;background:#eee}
+.ph img{width:100%;height:100%;object-fit:cover}
+.ph button{position:absolute;top:3px;right:3px;border:0;border-radius:50%;width:22px;height:22px;background:rgba(0,0,0,.6);color:#fff;cursor:pointer;line-height:1}
+.addph{width:78px;height:78px;border:2px dashed #cfc9bc;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:12px;color:var(--muted);cursor:pointer;text-align:center}
+.addph span{font-size:24px}
+.consent{display:flex;gap:10px;align-items:flex-start;font-size:13.5px;color:var(--muted);margin-top:14px;font-weight:400}
+.consent input{width:20px;height:20px;margin-top:1px;flex-shrink:0}
+.send{width:100%;border:0;border-radius:14px;padding:16px;font-size:17px;font-weight:700;background:var(--sun);color:#1d1300;cursor:pointer;margin-top:16px}
+.send:disabled{opacity:.6;cursor:wait}
+.err{color:var(--warn);font-size:14px;margin-top:10px;min-height:1em}
+.hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+.done{text-align:center;padding:30px 18px}
+.done .big{font-size:54px}
+.done h2{margin:6px 0 8px}
+footer{text-align:center;font-size:12.5px;color:var(--muted);padding:0 16px 30px}
+</style>
+</head>
+<body>
+<div class="hero">
+  <div class="brand"><img src="icon-192.png" alt=""><b>Zartizan</b></div>
+  <h1>Un souci à la maison ?<br><span>Demandez un devis</span> à un artisan péi.</h1>
+  <p>Plomberie, électricité, entretien de chauffe-eau : décrivez votre besoin en 2 minutes, un artisan du collectif vous rappelle.</p>
+  <div class="trust"><span>✅ Artisans locaux</span><span>📍 La Réunion</span><span>🤝 Un seul contact pour plusieurs métiers</span></div>
+</div>
+
+<div class="wrap">
+  <form id="f" novalidate>
+    <div class="card">
+      <div class="step"><i>1</i>De quoi avez-vous besoin ?</div>
+      <div class="services" id="svcs"></div>
+    </div>
+
+    <div class="card">
+      <div class="step"><i>2</i>Décrivez la situation</div>
+      <label for="desc">Votre besoin *</label>
+      <textarea id="desc" maxlength="3000" placeholder="Ex : mon chauffe-eau de 200 L fuit par le bas depuis hier, il a environ 10 ans."></textarea>
+      <label>Est-ce urgent ?</label>
+      <div class="urg"><button type="button" data-u="normale" class="on">Non, ça peut attendre</button><button type="button" data-u="urgent" class="u">Oui, c'est urgent</button></div>
+      <label>Photos <small>(facultatif, 5 max) : elles aident beaucoup pour le devis</small></label>
+      <div class="photos" id="photos"></div>
+      <input type="file" id="file" accept="image/*" multiple style="display:none">
+    </div>
+
+    <div class="card">
+      <div class="step"><i>3</i>Vos coordonnées</div>
+      <div class="grid2">
+        <div><label for="nom">Nom *</label><input id="nom" autocomplete="name" maxlength="120"></div>
+        <div><label for="tel">Téléphone *</label><input id="tel" type="tel" autocomplete="tel" inputmode="tel" placeholder="0692 12 34 56" maxlength="30"></div>
+      </div>
+      <label for="email">Email <small>(facultatif)</small></label>
+      <input id="email" type="email" autocomplete="email" maxlength="160">
+      <div class="grid2">
+        <div><label for="commune">Commune *</label><select id="commune"><option value="">Choisir…</option></select></div>
+        <div><label for="adresse">Adresse ou quartier</label><input id="adresse" autocomplete="street-address" maxlength="200"></div>
+      </div>
+      <label for="dispo">Vos disponibilités <small>(facultatif)</small></label>
+      <input id="dispo" maxlength="300" placeholder="Ex : en semaine après 16h, samedi matin">
+      <div class="hp"><label>Ne pas remplir <input id="website" tabindex="-1" autocomplete="off"></label></div>
+      <label class="consent"><input type="checkbox" id="ok"> J'accepte que mes informations soient utilisées par les artisans du collectif Zartizan pour me recontacter au sujet de ma demande. Elles ne sont ni revendues ni utilisées à d'autres fins.</label>
+      <button class="send" id="send" type="submit">Envoyer ma demande</button>
+      <div class="err" id="err"></div>
+    </div>
+  </form>
+
+  <div class="card done" id="done" style="display:none">
+    <div class="big">✅</div>
+    <h2>Demande envoyée, merci !</h2>
+    <p>Un artisan du collectif vous rappelle au <b id="dtel"></b> pour en parler et organiser le devis.</p>
+    <p style="color:var(--muted);font-size:14px">Pensez à décrocher si un numéro en 0692 / 0693 / 0262 vous appelle 😉</p>
+    <button class="send" type="button" onclick="location.reload()">Faire une autre demande</button>
+  </div>
+</div>
+<footer>Zartizan — collectif d'artisans du bâtiment à La Réunion</footer>
+
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+(function(){
+"use strict";
+const SERVICES = [["Plomberie","🚰","Plomberie","Fuite, WC, robinet…"],["Électricité","⚡","Électricité","Panne, tableau, prise…"],["Entretien chauffe-eau","🔥","Chauffe-eau","Entretien, détartrage, panne"],["Autre","🛠️","Autre besoin","Dites-nous tout"]];
+const COMMUNES = ["Le Tampon","Saint-Pierre","Saint-Louis","Saint-Joseph","Petite-Île","Entre-Deux","L'Étang-Salé","Les Avirons","Saint-Leu","Les Trois-Bassins","Saint-Paul","Le Port","La Possession","Saint-Denis","Sainte-Marie","Sainte-Suzanne","Saint-André","Bras-Panon","Saint-Benoît","Sainte-Rose","Saint-Philippe","La Plaine-des-Palmistes","Salazie","Cilaos"];
+const $ = id => document.getElementById(id);
+const st = { metier: "", urgence: "normale", photos: [] }; // photos: {blob, url}
+
+// Service présélectionné via le lien : devis.html?service=chauffe-eau
+try {
+  const q = new URLSearchParams(location.search).get("service") || (location.hash || "").slice(1);
+  const map = { plomberie: "Plomberie", electricite: "Électricité", "chauffe-eau": "Entretien chauffe-eau" };
+  if (map[q]) st.metier = map[q];
+} catch (e) {}
+
+$("svcs").innerHTML = SERVICES.map(([v, e, t, s]) => `<div class="svc" data-v="${v}"><span class="e">${e}</span><b>${t}</b><div style="font-size:12.5px;color:var(--muted)">${s}</div></div>`).join("");
+const paintSvc = () => document.querySelectorAll(".svc").forEach(x => x.classList.toggle("on", x.dataset.v === st.metier));
+document.querySelectorAll(".svc").forEach(x => x.onclick = () => { st.metier = x.dataset.v; paintSvc(); });
+paintSvc();
+
+$("commune").innerHTML += COMMUNES.map(c => `<option>${c}</option>`).join("");
+document.querySelectorAll("[data-u]").forEach(b => b.onclick = () => { st.urgence = b.dataset.u; document.querySelectorAll("[data-u]").forEach(x => x.classList.toggle("on", x === b)); });
+
+// ---- photos (redimensionnées à 1600 px avant envoi) ----
+function paintPhotos() {
+  $("photos").innerHTML = st.photos.map((p, i) => `<div class="ph"><img src="${p.url}" alt=""><button type="button" data-rm="${i}" aria-label="Retirer">×</button></div>`).join("")
+    + (st.photos.length < 5 ? `<div class="addph" id="addph"><span>📷</span>Ajouter</div>` : "");
+  $("photos").querySelectorAll("[data-rm]").forEach(b => b.onclick = () => { URL.revokeObjectURL(st.photos[+b.dataset.rm].url); st.photos.splice(+b.dataset.rm, 1); paintPhotos(); });
+  const a = $("addph"); if (a) a.onclick = () => $("file").click();
+}
+function shrink(file) {
+  return new Promise(res => {
+    const img = new Image(); const u = URL.createObjectURL(file);
+    img.onload = () => {
+      const M = 1600; let { width: w, height: h } = img; const r = Math.min(1, M / Math.max(w, h));
+      const c = document.createElement("canvas"); c.width = Math.round(w * r); c.height = Math.round(h * r);
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(u);
+      c.toBlob(b => res(b), "image/jpeg", 0.8);
+    };
+    img.onerror = () => { URL.revokeObjectURL(u); res(null); };
+    img.src = u;
+  });
+}
+$("file").onchange = async e => {
+  for (const f of [...e.target.files].slice(0, 5 - st.photos.length)) {
+    const b = await shrink(f); if (b) st.photos.push({ blob: b, url: URL.createObjectURL(b) });
+  }
+  e.target.value = ""; paintPhotos();
+};
+paintPhotos();
+
+// ---- envoi ----
+const cfg = window.ZARTIZAN_CONFIG || {};
+const sb = (cfg.SUPABASE_URL && window.supabase) ? window.supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY, { auth: { persistSession: false, autoRefreshToken: false } }) : null;
+const uid = () => (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2));
+
+$("f").onsubmit = async e => {
+  e.preventDefault();
+  const err = m => { $("err").textContent = m; };
+  err("");
+  if ($("website").value) return; // robot
+  const v = { nom: $("nom").value.trim(), tel: $("tel").value.trim(), email: $("email").value.trim(), commune: $("commune").value,
+    adresse: $("adresse").value.trim(), desc: $("desc").value.trim(), dispo: $("dispo").value.trim() };
+  if (!st.metier) return err("Choisissez le type de besoin (étape 1).");
+  if (v.desc.length < 5) return err("Décrivez votre besoin en quelques mots (étape 2).");
+  if (v.nom.length < 2) return err("Indiquez votre nom.");
+  if (v.tel.replace(/\D/g, "").length < 9) return err("Indiquez un numéro de téléphone valide.");
+  if (!v.commune) return err("Choisissez votre commune.");
+  if (!$("ok").checked) return err("Merci de cocher la case d'accord pour être recontacté.");
+  if (!sb) return err("Le service est momentanément indisponible. Merci de réessayer plus tard.");
+
+  const btn = $("send"); btn.disabled = true; btn.textContent = "Envoi en cours…";
+  try {
+    const paths = []; const folder = "web/" + uid();
+    for (let i = 0; i < st.photos.length; i++) {
+      const p = folder + "/" + (i + 1) + ".jpg";
+      const { error } = await sb.storage.from("photos").upload(p, st.photos[i].blob, { contentType: "image/jpeg", upsert: false });
+      if (!error) paths.push(p);
+    }
+    const { error } = await sb.rpc("demande_devis", {
+      p_client: v.nom, p_tel: v.tel, p_email: v.email, p_commune: v.commune, p_adresse: v.adresse,
+      p_metier: st.metier, p_description: v.desc, p_urgence: st.urgence, p_disponibilites: v.dispo, p_photos: paths
+    });
+    if (error) throw error;
+    $("f").style.display = "none"; $("done").style.display = ""; $("dtel").textContent = v.tel;
+    window.scrollTo(0, 0);
+  } catch (e2) {
+    err((e2 && e2.message && !/fetch|network/i.test(e2.message)) ? e2.message : "Problème de connexion, merci de réessayer.");
+    btn.disabled = false; btn.textContent = "Envoyer ma demande";
+  }
+};
+})();
+</script>
+</body>
+</html>
