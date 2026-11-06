@@ -1,6 +1,6 @@
 // Service worker Zartizan : rend l'appli installable et la fait démarrer même sans réseau.
 // Pense à changer VERSION à chaque mise à jour de l'appli.
-const VERSION = "zartizan-v2";
+const VERSION = "zartizan-v3";
 const SHELL = [
   "./", "./index.html", "./config.js", "./manifest.webmanifest",
   "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png"

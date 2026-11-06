@@ -12,7 +12,7 @@ const COLORS = ["#0f766e","#1d4ed8","#c2410c","#7e22ce","#be185d","#4d7c0f","#03
 const VIEWS = [["demandes","📋","Demandes"],["nouvelle","➕","Nouvelle"],["planning","📅","Planning"],["rappels","🔔","Rappels"],["equipe","👥","Équipe"]];
 
 const S = {
-  sb: null, session: null, me: "",
+  sb: null, session: null, me: "", isAdmin: false,
   artisans: [], demandes: [], loaded: false,
   view: "demandes", filtre: "actives", qui: "tous", _prefill: null, _editing: false
 };
@@ -95,6 +95,7 @@ async function loadAll() {
   const email = (S.session && S.session.user.email || "").toLowerCase();
   const meA = S.artisans.find(x => (x.email || "").toLowerCase() === email);
   S.me = meA ? meA.id : "";
+  S.isAdmin = !!(meA && meA.role === "admin");
   S.loaded = true;
   render(); refreshModal();
 }
@@ -185,7 +186,7 @@ function renderNav() {
     return `<button data-v="${k}" class="${S.view === k ? "on" : ""}"><span class="ic">${ic}</span><span>${l}${b}</span></button>`;
   }).join("");
   $("nav").querySelectorAll("button").forEach(b => b.onclick = () => setView(b.dataset.v));
-  $("who").textContent = S.me ? artName(S.me) : (S.session ? S.session.user.email : "");
+  $("who").textContent = S.me ? artName(S.me) + (S.isAdmin ? " · admin" : "") : (S.session ? S.session.user.email : "");
 }
 
 function render() {
@@ -228,13 +229,13 @@ function vDemandes(m) {
   let list = S.demandes.slice();
   if (S.filtre === "actives") list = list.filter(d => !["terminee","annulee"].includes(d.statut));
   else if (S.filtre !== "toutes") list = list.filter(d => d.statut === S.filtre);
-  if (S.qui === "moi") list = list.filter(d => d.artisanId && d.artisanId === S.me);
-  if (S.qui === "libre") list = list.filter(d => !d.artisanId);
+  if (S.isAdmin && S.qui === "moi") list = list.filter(d => d.artisanId && d.artisanId === S.me);
+  if (S.isAdmin && S.qui === "libre") list = list.filter(d => !d.artisanId);
   const ord = { nouvelle: 0, attribuee: 1, devis: 2, planifiee: 3, terminee: 4, annulee: 5 };
   list.sort((a, b) => (b.urgence === "urgent") - (a.urgence === "urgent") || (ord[a.statut] - ord[b.statut]) || (b.createdAt || 0) - (a.createdAt || 0));
-  m.innerHTML = `<h2>Demandes</h2>
+  m.innerHTML = `<h2>${S.isAdmin ? "Demandes" : "Mes demandes"}</h2>
     <div class="chips">${F.map(([k, l]) => `<button class="chip ${S.filtre === k ? "on" : ""}" data-f="${k}">${l}</button>`).join("")}</div>
-    <div class="chips">${[["tous","Tout le monde"],["moi","Mes demandes"],["libre","Non attribuées"]].map(([k, l]) => `<button class="chip ${S.qui === k ? "on" : ""}" data-q="${k}">${l}</button>`).join("")}</div>
+    ${S.isAdmin ? `<div class="chips">${[["tous","Tout le monde"],["moi","Mes demandes"],["libre","Non attribuées"]].map(([k, l]) => `<button class="chip ${S.qui === k ? "on" : ""}" data-q="${k}">${l}</button>`).join("")}</div>` : ""}
     ${list.length ? list.map(demCard).join("") : `<div class="empty">Aucune demande ici.<br><br><button class="btn" id="go-new">➕ Saisir une demande</button></div>`}`;
   m.querySelectorAll("[data-f]").forEach(b => b.onclick = () => { S.filtre = b.dataset.f; render(); });
   m.querySelectorAll("[data-q]").forEach(b => b.onclick = () => { S.qui = b.dataset.q; render(); });
@@ -260,7 +261,7 @@ function vNouvelle(m) {
     </div>
     <div class="f"><label>Description du besoin *</label><textarea name="description" required placeholder="Ex : chauffe-eau 200 L qui fuit, installé en 2015…">${esc(p.description || "")}</textarea></div>
     <div class="grid2">
-      <div class="f"><label>Attribuer à</label><select name="artisanId">${artOptions(p.artisanId || "")}</select></div>
+      ${S.isAdmin ? `<div class="f"><label>Attribuer à</label><select name="artisanId">${artOptions(p.artisanId || "")}</select></div>` : ""}
       <div class="f"><label>Source</label><select name="source">${["Appel direct","Bouche-à-oreille","Facebook","Site / formulaire","Client existant","Autre"].map(x => `<option ${x === (p.source || "") ? "selected" : ""}>${x}</option>`).join("")}</select></div>
     </div>
     <div class="actions"><button class="btn" type="submit">Enregistrer la demande</button></div>
@@ -270,7 +271,7 @@ function vNouvelle(m) {
   if (!p.metier && art(S.me) && METIERS.includes(art(S.me).metier)) E.metier.value = art(S.me).metier;
   f.onsubmit = async e => {
     e.preventDefault();
-    const now = Date.now(), aid = E.artisanId.value;
+    const now = Date.now(), aid = S.isAdmin ? E.artisanId.value : S.me;
     const doc = {
       client: E.client.value.trim(), tel: E.tel.value.trim(), commune: E.commune.value.trim(), adresse: E.adresse.value.trim(),
       metier: E.metier.value, urgence: E.urgence.value, description: E.description.value.trim(), source: E.source.value,
@@ -292,14 +293,14 @@ function vNouvelle(m) {
 function vPlanning(m) {
   const t = todayStr(), lim = addDays(t, 21);
   let list = S.demandes.filter(d => d.rdv && !["terminee","annulee"].includes(d.statut));
-  if (S.qui === "moi") list = list.filter(d => d.artisanId === S.me);
+  if (S.isAdmin && S.qui === "moi") list = list.filter(d => d.artisanId === S.me);
   list.sort((a, b) => a.rdv.localeCompare(b.rdv));
   const late = list.filter(d => d.rdv.slice(0, 10) < t);
   const up = list.filter(d => d.rdv.slice(0, 10) >= t && d.rdv.slice(0, 10) <= lim);
   const groups = {}; up.forEach(d => (groups[d.rdv.slice(0, 10)] = groups[d.rdv.slice(0, 10)] || []).push(d));
-  const aPlanifier = S.demandes.filter(d => ["attribuee","devis"].includes(d.statut) && !d.rdv && (S.qui !== "moi" || d.artisanId === S.me));
-  m.innerHTML = `<h2>Planning (3 semaines)</h2>
-   <div class="chips">${[["tous","Toute l'équipe"],["moi","Mon planning"]].map(([k, l]) => `<button class="chip ${(S.qui === "moi") === (k === "moi") ? "on" : ""}" data-q="${k}">${l}</button>`).join("")}</div>
+  const aPlanifier = S.demandes.filter(d => ["attribuee","devis"].includes(d.statut) && !d.rdv && (!S.isAdmin || S.qui !== "moi" || d.artisanId === S.me));
+  m.innerHTML = `<h2>${S.isAdmin ? "Planning" : "Mon planning"} (3 semaines)</h2>
+   <div class="chips" style="${S.isAdmin ? "" : "display:none"}">${[["tous","Toute l'équipe"],["moi","Mon planning"]].map(([k, l]) => `<button class="chip ${(S.qui === "moi") === (k === "moi") ? "on" : ""}" data-q="${k}">${l}</button>`).join("")}</div>
    <div class="row" style="margin-bottom:6px">${S.artisans.map(a => `<span class="small"><span class="dot" style="background:${esc(a.couleur)}"></span> ${esc(a.nom)}</span>`).join("")}</div>
    ${late.length ? `<div class="day late">⚠ RDV passés non clôturés</div>${late.map(demCard).join("")}` : ""}
    ${Object.keys(groups).length ? Object.keys(groups).map(k => `<div class="day">${k === t ? "Aujourd'hui · " : ""}${esc(fmtDay(k))}</div>${groups[k].map(demCard).join("")}`).join("") : `<div class="empty">Aucun rendez-vous prévu dans les 3 semaines.</div>`}
@@ -332,6 +333,20 @@ function vRappels(m) {
 }
 
 function vEquipe(m) {
+  if (!S.isAdmin) {
+    const mine = S.demandes.filter(d => d.artisanId === S.me);
+    m.innerHTML = `<h2>Équipe</h2>
+     <div class="stats">
+       <div class="stat"><b>${mine.filter(d => !["terminee","annulee"].includes(d.statut)).length}</b><span>mes demandes en cours</span></div>
+       <div class="stat"><b>${mine.filter(d => d.statut === "terminee").length}</b><span>mes interventions terminées</span></div>
+       <div class="stat"><b>${mine.filter(d => (d.historique || []).some(h => h.type === "transfert" && h.vers === S.me)).length}</b><span>clients reçus de collègues</span></div>
+     </div>
+     <h3>Mes collègues</h3>
+     ${S.artisans.filter(a => a.id !== S.me).map(a => `<div class="card"><div class="row between"><span><span class="dot" style="background:${esc(a.couleur)}"></span> <b>${esc(a.nom)}</b></span><span class="small">${esc(a.metier || "")}</span></div>
+       ${a.tel ? `<div class="links" style="margin-top:6px"><a href="tel:${esc(a.tel)}">📞 ${esc(a.tel)}</a><a href="https://wa.me/${esc(phoneDigits(a.tel))}" target="_blank" rel="noopener">WhatsApp</a></div>` : ""}
+       ${a.zone ? `<div class="small">Zone : ${esc(a.zone)}</div>` : ""}</div>`).join("") || `<div class="empty">Pas encore de collègues.</div>`}`;
+    return;
+  }
   const st = S.artisans.map(a => {
     const mine = S.demandes.filter(d => d.artisanId === a.id);
     let envoyes = 0, recus = 0;
@@ -350,7 +365,7 @@ function vEquipe(m) {
      <tr><th>Artisan</th><th class="n">En cours</th><th class="n">Terminées</th><th class="n">Envoyés</th><th class="n">Reçus</th><th></th></tr>
      ${st.map(x => `<tr><td><span class="dot" style="background:${esc(x.a.couleur)}"></span> <b>${esc(x.a.nom)}</b><br><span class="small">${esc(x.a.metier || "")} · ${esc(x.a.tel || "")}</span></td>
        <td class="n">${x.encours}</td><td class="n">${x.faites}</td><td class="n">${x.envoyes}</td><td class="n">${x.recus}</td>
-       <td class="n"><button class="btn sec sm" data-edit="${esc(x.a.id)}">Modifier</button></td></tr>`).join("")}
+       <td class="n">${x.a.role === "admin" ? '<span class="pill st-planifiee">admin</span> ' : ""}<button class="btn sec sm" data-edit="${esc(x.a.id)}">Modifier</button></td></tr>`).join("")}
    </table></div>
    <h3 id="fa-title">Ajouter un artisan</h3>
    <p class="hint">L'artisan pourra ensuite se connecter avec cet email (bouton « Première connexion »).</p>
@@ -364,14 +379,17 @@ function vEquipe(m) {
        <div class="f"><label>Métier</label><select name="metier">${METIERS.map(x => `<option>${esc(x)}</option>`).join("")}</select></div>
        <div class="f"><label>Téléphone</label><input name="tel" type="tel"></div>
      </div>
-     <div class="f"><label>Zone d'intervention</label><input name="zone" placeholder="Sud, Ouest, toute l'île…"></div>
+     <div class="grid2">
+       <div class="f"><label>Zone d'intervention</label><input name="zone" placeholder="Sud, Ouest, toute l'île…"></div>
+       <div class="f"><label>Rôle</label><select name="role"><option value="artisan">Artisan (voit ses demandes)</option><option value="admin">Admin (voit tout)</option></select></div>
+     </div>
      <div class="actions"><button class="btn" type="submit">Enregistrer</button><button class="btn sec" type="button" id="fa-cancel" style="display:none">Annuler</button><button class="btn danger" type="button" id="fa-del" style="display:none">Retirer de l'équipe</button></div>
    </form>`;
   const f = $("fart"), E = f.elements;
   const reset = () => { f.reset(); E.aid.value = ""; $("fa-title").textContent = "Ajouter un artisan"; $("fa-cancel").style.display = "none"; $("fa-del").style.display = "none"; };
   m.querySelectorAll("[data-edit]").forEach(b => b.onclick = () => {
     const a = art(b.dataset.edit); if (!a) return;
-    E.aid.value = a.id; E.nom.value = a.nom || ""; E.email.value = a.email || ""; E.metier.value = METIERS.includes(a.metier) ? a.metier : "Autre"; E.tel.value = a.tel || ""; E.zone.value = a.zone || "";
+    E.aid.value = a.id; E.nom.value = a.nom || ""; E.email.value = a.email || ""; E.metier.value = METIERS.includes(a.metier) ? a.metier : "Autre"; E.tel.value = a.tel || ""; E.zone.value = a.zone || ""; E.role.value = a.role === "admin" ? "admin" : "artisan";
     $("fa-title").textContent = "Modifier " + a.nom; $("fa-cancel").style.display = ""; $("fa-del").style.display = a.id === S.me ? "none" : ""; f.scrollIntoView({ behavior: "smooth" });
   });
   $("fa-cancel").onclick = reset;
@@ -383,7 +401,8 @@ function vEquipe(m) {
   };
   f.onsubmit = async e => {
     e.preventDefault();
-    const body = { nom: E.nom.value.trim(), email: E.email.value.trim().toLowerCase(), metier: E.metier.value, tel: E.tel.value.trim(), zone: E.zone.value.trim() };
+    const body = { nom: E.nom.value.trim(), email: E.email.value.trim().toLowerCase(), metier: E.metier.value, tel: E.tel.value.trim(), zone: E.zone.value.trim(), role: E.role.value };
+    if (E.aid.value === S.me && body.role !== "admin") { toast("Tu ne peux pas retirer ton propre rôle admin"); return; }
     let ok;
     if (E.aid.value) ok = await A.update(E.aid.value, body, "Artisan modifié ✓");
     else { body.couleur = COLORS[S.artisans.length % COLORS.length]; ok = await A.insert(body, "Artisan ajouté ✓"); }
@@ -414,7 +433,7 @@ function openDetail(id) {
     <div class="card" style="background:#faf8f3">${esc(d.description).replace(/\n/g, "<br>")}</div>
     <div class="grid2">
       <div class="f"><label>Statut</label><select id="d-st">${STATUTS.map(([k, l]) => `<option value="${k}" ${k === d.statut ? "selected" : ""}>${l}</option>`).join("")}</select></div>
-      <div class="f"><label>Artisan</label><select id="d-art">${artOptions(d.artisanId)}</select></div>
+      <div class="f"><label>Artisan</label><select id="d-art" ${S.isAdmin ? "" : "disabled"}>${artOptions(d.artisanId)}</select></div>
     </div>
     <div class="grid2">
       <div class="f"><label>Rendez-vous</label><input type="datetime-local" id="d-rdv" value="${esc(d.rdv || "")}"></div>
@@ -433,7 +452,7 @@ function openDetail(id) {
     <div class="row"><input id="n-txt" placeholder="Ajouter une note…" style="flex:1"><button class="btn sec" id="n-add">Ajouter</button></div>
     <div class="hist">${(d.historique || []).slice().reverse().map(h => `<div><span class="when">${esc(fmtStamp(h.t))} · ${esc(h.par ? artName(h.par) : "")}</span><br>${esc(h.texte)}</div>`).join("")}</div>
     ${d.rappelDate ? `<p class="small">🔔 Rappel d'entretien : ${esc(fmtDay(d.rappelDate))}${d.rappelFait ? " (traité)" : ""}</p>` : ""}
-    <div class="actions"><button class="btn danger sm" id="d-del">Supprimer la demande</button></div>
+    ${S.isAdmin ? `<div class="actions"><button class="btn danger sm" id="d-del">Supprimer la demande</button></div>` : ""}
   </div></div>`;
   $("x").onclick = closeModal;
   $("ov").onclick = e => { if (e.target.id === "ov") closeModal(); };
@@ -443,7 +462,7 @@ function openDetail(id) {
 
   $("d-save").onclick = async () => {
     const c = cur();
-    let st = $("d-st").value; const aid = $("d-art").value, rdv = $("d-rdv").value, mt = $("d-mt").value;
+    let st = $("d-st").value; const aid = S.isAdmin ? $("d-art").value : (c.artisanId || ""), rdv = $("d-rdv").value, mt = $("d-mt").value;
     const ch = [];
     if (aid !== (c.artisanId || "")) { ch.push("Attribuée à " + artName(aid)); if (st === "nouvelle" && aid) st = "attribuee"; }
     if (rdv !== (c.rdv || "")) { ch.push(rdv ? "RDV fixé : " + fmtRdv(rdv) : "RDV supprimé"); if (rdv && ["nouvelle","attribuee","devis"].includes(st)) st = "planifiee"; }
@@ -491,7 +510,7 @@ function openDetail(id) {
     const t = $("n-txt").value.trim(); if (!t) return; S._editing = false;
     after(await D.update(id, { historique: hist(cur(), "note", t) }, "Note ajoutée"));
   };
-  $("d-del").onclick = () => confirmBox("Supprimer définitivement la demande de " + d.client + " ?", async () => {
+  if ($("d-del")) $("d-del").onclick = () => confirmBox("Supprimer définitivement la demande de " + d.client + " ?", async () => {
     if (await D.remove(id, "Demande supprimée")) { closeModal(); scheduleReload(); }
   });
 }

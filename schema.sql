@@ -12,6 +12,7 @@ create table if not exists public.artisans (
   zone        text,
   couleur     text,
   email       text not null unique,
+  role        text not null default 'artisan',   -- 'admin' ou 'artisan'
   created_at  timestamptz not null default now()
 );
 
@@ -78,6 +79,8 @@ end $$;
 
 -- 6) PREMIER MEMBRE : remplace par TON nom et TON email, puis exécute.
 --    Ensuite tu ajouteras les autres artisans depuis l'onglet « Équipe » de l'appli.
-insert into public.artisans (nom, metier, email, couleur)
-values ('Maxime', 'Entretien chauffe-eau', 'TON-EMAIL@exemple.com', '#0f766e')
+insert into public.artisans (nom, metier, email, couleur, role)
+values ('Maxime', 'Entretien chauffe-eau', 'TON-EMAIL@exemple.com', '#0f766e', 'admin')
 on conflict (email) do nothing;
+
+-- 7) Rôles et droits (admin voit tout, artisan voit ses demandes) : exécuter aussi migration-roles.sql
