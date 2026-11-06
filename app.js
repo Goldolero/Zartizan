@@ -111,13 +111,17 @@ async function boot() {
     return;
   }
   S.sb = window.supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY, { auth: { persistSession: true, autoRefreshToken: true } });
+  if (/type=recovery/.test(location.hash)) S.recovery = true;
   const { data } = await S.sb.auth.getSession();
   S.session = data.session;
-  S.sb.auth.onAuthStateChange((_ev, session) => {
+  if (S.recovery) { if (S.session) showNewPassword(); else showLogin("Lien expiré ou déjà utilisé : redemande un email."); }
+  S.sb.auth.onAuthStateChange((ev, session) => {
     const was = !!S.session; S.session = session;
+    if (ev === "PASSWORD_RECOVERY") { S.recovery = true; showNewPassword(); return; }
+    if (S.recovery) return;
     if (!!session !== was) start();
   });
-  start();
+  if (!S.recovery) start();
 }
 
 let channel = null;
@@ -134,6 +138,29 @@ function start() {
   }
 }
 document.addEventListener("visibilitychange", () => { if (!document.hidden && S.session) scheduleReload(); });
+
+function showNewPassword() {
+  $("hdr").style.display = "none"; $("navwrap").style.display = "none"; $("modal").innerHTML = "";
+  $("main").innerHTML = `<div class="login">
+    <div class="logo"><img src="icon-192.png" alt=""><div><b>Zartizan</b><span>Nouveau mot de passe</span></div></div>
+    <form id="fpwd" class="card">
+      <div class="f"><label>Nouveau mot de passe</label><input name="p1" type="password" autocomplete="new-password" minlength="6" required></div>
+      <div class="f"><label>Confirmer</label><input name="p2" type="password" autocomplete="new-password" minlength="6" required></div>
+      <div class="actions"><button class="btn" type="submit" style="flex:1">Enregistrer</button></div>
+    </form></div>`;
+  const f = $("fpwd");
+  f.onsubmit = async e => {
+    e.preventDefault();
+    const a = f.elements.p1.value, b = f.elements.p2.value;
+    if (a !== b) { toast("Les deux mots de passe sont différents"); return; }
+    const { error } = await S.sb.auth.updateUser({ password: a });
+    if (error) { toast(error.message); return; }
+    toast("Mot de passe modifié ✓");
+    S.recovery = false;
+    try { history.replaceState(null, "", location.pathname); } catch (_) {}
+    start();
+  };
+}
 
 function showLogin(msg) {
   $("hdr").style.display = "none"; $("navwrap").style.display = "none"; $("modal").innerHTML = "";
@@ -166,7 +193,8 @@ function showLogin(msg) {
   $("forgot").onclick = async () => {
     const v = vals(); if (!v.email) { toast("Saisis ton email d'abord"); return; }
     const { error } = await S.sb.auth.resetPasswordForEmail(v.email, { redirectTo: location.origin + location.pathname });
-    toast(error ? error.message : "Email de réinitialisation envoyé");
+    if (error) toast(/rate|seconds/i.test(error.message) ? "Trop de demandes : réessaie dans une heure" : error.message);
+    else showLogin("Email envoyé à " + v.email + ". Ouvre le lien sur cet appareil (pense à regarder les spams).");
   };
 }
 $("logout").onclick = async () => { await S.sb.auth.signOut(); };
