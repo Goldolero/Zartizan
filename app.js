@@ -398,7 +398,7 @@ function vEquipe(m) {
    </div>
    <div class="card" style="overflow-x:auto"><table>
      <tr><th>Artisan</th><th class="n">En cours</th><th class="n">Terminées</th><th class="n">Envoyés</th><th class="n">Reçus</th><th></th></tr>
-     ${st.map(x => `<tr><td><span class="dot" style="background:${esc(x.a.couleur)}"></span> <b>${esc(x.a.nom)}</b><br><span class="small">${esc(x.a.metier || "")} · ${esc(x.a.tel || "")}</span></td>
+     ${st.map(x => `<tr><td><span class="dot" style="background:${esc(x.a.couleur)}"></span> <b>${esc(x.a.nom)}</b><br><span class="small">${esc(x.a.metier || "")} · ${esc(x.a.tel || "")}${x.a.recoitSite === false ? " · ⏸ pas de demandes du site" : " · 🌐 auto"}</span></td>
        <td class="n">${x.encours}</td><td class="n">${x.faites}</td><td class="n">${x.envoyes}</td><td class="n">${x.recus}</td>
        <td class="n">${x.a.role === "admin" ? '<span class="pill st-planifiee">admin</span> ' : ""}<button class="btn sec sm" data-edit="${esc(x.a.id)}">Modifier</button></td></tr>`).join("")}
    </table></div>
@@ -418,6 +418,7 @@ function vEquipe(m) {
        <div class="f"><label>Zone d'intervention</label><input name="zone" placeholder="Sud, Ouest, toute l'île…"></div>
        <div class="f"><label>Rôle</label><select name="role"><option value="artisan">Artisan (voit ses demandes)</option><option value="admin">Admin (voit tout)</option></select></div>
      </div>
+     <label class="row" style="gap:8px;font-size:14px;margin:4px 0 6px"><input type="checkbox" name="recoit" checked style="width:auto"> Reçoit automatiquement les demandes du site pour son métier</label>
      <div class="actions"><button class="btn" type="submit">Enregistrer</button><button class="btn sec" type="button" id="fa-cancel" style="display:none">Annuler</button><button class="btn danger" type="button" id="fa-del" style="display:none">Retirer de l'équipe</button></div>
    </form>`;
   $("copy-link").onclick = async () => { try { await navigator.clipboard.writeText(lienClient); toast("Lien copié ✓"); } catch (e) { toast("Copie impossible : sélectionne le lien à la main"); } };
@@ -425,7 +426,7 @@ function vEquipe(m) {
   const reset = () => { f.reset(); E.aid.value = ""; $("fa-title").textContent = "Ajouter un artisan"; $("fa-cancel").style.display = "none"; $("fa-del").style.display = "none"; };
   m.querySelectorAll("[data-edit]").forEach(b => b.onclick = () => {
     const a = art(b.dataset.edit); if (!a) return;
-    E.aid.value = a.id; E.nom.value = a.nom || ""; E.email.value = a.email || ""; E.metier.value = METIERS.includes(a.metier) ? a.metier : "Autre"; E.tel.value = a.tel || ""; E.zone.value = a.zone || ""; E.role.value = a.role === "admin" ? "admin" : "artisan";
+    E.aid.value = a.id; E.nom.value = a.nom || ""; E.email.value = a.email || ""; E.metier.value = METIERS.includes(a.metier) ? a.metier : "Autre"; E.tel.value = a.tel || ""; E.zone.value = a.zone || ""; E.role.value = a.role === "admin" ? "admin" : "artisan"; E.recoit.checked = a.recoitSite !== false;
     $("fa-title").textContent = "Modifier " + a.nom; $("fa-cancel").style.display = ""; $("fa-del").style.display = a.id === S.me ? "none" : ""; f.scrollIntoView({ behavior: "smooth" });
   });
   $("fa-cancel").onclick = reset;
@@ -437,7 +438,7 @@ function vEquipe(m) {
   };
   f.onsubmit = async e => {
     e.preventDefault();
-    const body = { nom: E.nom.value.trim(), email: E.email.value.trim().toLowerCase(), metier: E.metier.value, tel: E.tel.value.trim(), zone: E.zone.value.trim(), role: E.role.value };
+    const body = { nom: E.nom.value.trim(), email: E.email.value.trim().toLowerCase(), metier: E.metier.value, tel: E.tel.value.trim(), zone: E.zone.value.trim(), role: E.role.value, recoitSite: E.recoit.checked };
     if (E.aid.value === S.me && body.role !== "admin") { toast("Tu ne peux pas retirer ton propre rôle admin"); return; }
     let ok;
     if (E.aid.value) ok = await A.update(E.aid.value, body, "Artisan modifié ✓");
